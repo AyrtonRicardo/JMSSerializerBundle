@@ -9,9 +9,13 @@ use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 
 class CustomHandlersPass implements CompilerPassInterface
 {
+    /**
+    * @param ContainerBuilder $container
+    */
     public function process(ContainerBuilder $container)
     {
-        $handlers = array();
+        $handlers = [];
+
         foreach ($container->findTaggedServiceIds('jms_serializer.handler') as $id => $tags) {
             foreach ($tags as $attrs) {
                 if ( ! isset($attrs['type'], $attrs['format'])) {
@@ -19,6 +23,7 @@ class CustomHandlersPass implements CompilerPassInterface
                 }
 
                 $directions = array(GraphNavigator::DIRECTION_DESERIALIZATION, GraphNavigator::DIRECTION_SERIALIZATION);
+
                 if (isset($attrs['direction'])) {
                     if ( ! defined($directionConstant = 'JMS\Serializer\GraphNavigator::DIRECTION_'.strtoupper($attrs['direction']))) {
                         throw new \RuntimeException(sprintf('The direction "%s" of tag "jms_serializer.handler" of service "%s" does not exist.', $attrs['direction'], $id));
@@ -37,6 +42,7 @@ class CustomHandlersPass implements CompilerPassInterface
         foreach ($container->findTaggedServiceIds('jms_serializer.subscribing_handler') as $id => $tags) {
             $class = $container->getDefinition($id)->getClass();
             $ref = new \ReflectionClass($class);
+
             if ( ! $ref->implementsInterface('JMS\Serializer\Handler\SubscribingHandlerInterface')) {
                 throw new \RuntimeException(sprintf('The service "%s" must implement the SubscribingHandlerInterface.', $id));
             }
